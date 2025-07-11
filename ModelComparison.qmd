@@ -9,6 +9,22 @@ editor: visual
 
 ## Task 1: Conceptual Questions
 
+-   What is the purpose of using cross-validation when fitting a random forest model?
+
+    Cross-validation is an important method to reduce risk of over fitting a model and to prevent data leakage. Since CV is performed on multiple data splits, it helps form a better understanding of a random forest models performance on unseen (i.e. real world) data.
+
+-   Describe the bagged tree algorithm.
+
+    Bagging stands for "bootstrap aggregation" in which multiple tree models are trained on bootstrapped data sets and the results aggregated to form the model's prediction. Bootstrpping is a sub sampling method that utilizes replacement, so each tree is trained on sub samples with varying compositions based on the original training set.
+
+-   What is meant by a general linear model?
+
+-    When fitting a multiple linear regression model, what does adding an interaction term
+    do? That is, what does it allow the model to do differently as compared to when it is
+    not included in the model?
+
+-   Why do we split our data into a training and test set?
+
 ## Task 2: Data Prep
 
 ## Task 3: EDA
