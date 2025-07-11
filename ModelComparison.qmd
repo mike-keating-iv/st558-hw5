@@ -1,0 +1,20 @@
+---
+title: "Model Comparison"
+author: "Mike Keating"
+format: pdf
+editor: visual
+---
+
+# Model Comparison
+
+## Task 1: Conceptual Questions
+
+## Task 2: Data Prep
+
+## Task 3: EDA
+
+## Task 4: Testing and Training
+
+## Task 5: OLS and LASSO
+
+## Task 6: Linear Regression
