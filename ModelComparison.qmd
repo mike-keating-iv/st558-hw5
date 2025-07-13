@@ -23,9 +23,36 @@ editor: visual
     do? That is, what does it allow the model to do differently as compared to when it is
     not included in the model?
 
+    Adding an interaction term accounts for the situation where the value of one predictor can depend on the value of another predictor. This is represented in the formula as a product of these terms.
+
 -   Why do we split our data into a training and test set?
 
+    In order to test the effectiveness of our model in real world situations, it needs to be tested on data that it was not trained on. Otherwise, the model may be over fit to the training data and the model would have poor generalization.
+
 ## Task 2: Data Prep
+
+#### Packages and Data
+
+```{r message=FALSE}
+# Load Dependencies
+library(tidyverse)
+library(tidymodels)
+library(caret)
+library(yardstick)
+```
+
+```{r}
+heart <- read_csv("data/heart.csv")
+summary(heart)
+```
+
+#### What type of variable (in R) is Heart Disease? Categorical or Quantitative?
+
+Heart disease is a quantitative variable (double)
+
+#### Does this make sense? Why or why not?
+
+This does not make sense - as this variable should be treated as a factor, since it is a binary classification.
 
 ## Task 3: EDA
 
