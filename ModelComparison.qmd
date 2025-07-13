@@ -81,6 +81,19 @@ g
 
 ## Task 4: Testing and Training
 
+#### Split into test and train sets
+
+```{r}
+# Set random seed
+set.seed(101)
+
+# Split into test and train sets
+heart_split <- heart |> initial_split(prop=0.8)
+train <- training(heart_split)
+test <- testing(heart_split)
+
+```
+
 ## Task 5: OLS and LASSO
 
 ## Task 6: Linear Regression
