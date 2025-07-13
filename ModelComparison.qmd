@@ -15,15 +15,17 @@ editor: visual
 
 -   Describe the bagged tree algorithm.
 
-    Bagging stands for "bootstrap aggregation" in which multiple tree models are trained on bootstrapped data sets and the results aggregated to form the model's prediction. Bootstrpping is a sub sampling method that utilizes replacement, so each tree is trained on sub samples with varying compositions based on the original training set.
+    Bagging stands for "bootstrap aggregation" in which multiple tree models are trained on bootstrapped data sets and the results aggregated to form the model's prediction. Bootstrapping is a sub sampling method that utilizes replacement, so each tree is trained on sub samples with varying compositions based on the original training set.
 
 -   What is meant by a general linear model?
+
+    A general linear model is a generic framework for predicting the response of a dependent variable on one or more independent variables (regressors).
 
 -    When fitting a multiple linear regression model, what does adding an interaction term
     do? That is, what does it allow the model to do differently as compared to when it is
     not included in the model?
 
-    Adding an interaction term accounts for the situation where the value of one predictor can depend on the value of another predictor. This is represented in the formula as a product of these terms.
+    Adding an interaction term accounts for the situation where the value of one regressor can depend on the value of another regressor. This is represented in the formula as a product of these terms.
 
 -   Why do we split our data into a training and test set?
 
@@ -42,7 +44,7 @@ library(yardstick)
 ```
 
 ```{r}
-heart <- read_csv("data/heart.csv")
+heart <- read_csv("data/heart.csv", show_col_types = FALSE)
 summary(heart)
 ```
 
@@ -53,6 +55,16 @@ Heart disease is a quantitative variable (double)
 #### Does this make sense? Why or why not?
 
 This does not make sense - as this variable should be treated as a factor, since it is a binary classification.
+
+```{r}
+# Change heart disease to the correct type
+# Perform some dataset cleanup
+
+heart <- heart |> mutate(HasHeartDisease = as_factor(HeartDisease)) |> 
+  select(!c(ST_Slope, HeartDisease))
+
+head(heart)
+```
 
 ## Task 3: EDA
 
