@@ -68,6 +68,17 @@ head(heart)
 
 ## Task 3: EDA
 
+```{r}
+library(ggplot2)
+ # NOTE: Check to see if I am understanding the prompt correctly...
+g <- ggplot(heart, aes(x = MaxHR, y = Age)) + 
+  geom_point(aes(color=HasHeartDisease)) +
+  geom_smooth(method = "lm", se=FALSE) + 
+  labs() + 
+  theme_minimal()
+g
+```
+
 ## Task 4: Testing and Training
 
 ## Task 5: OLS and LASSO
