@@ -71,11 +71,11 @@ head(heart)
 ```{r}
 library(ggplot2)
  # NOTE: Check to see if I am understanding the prompt correctly...
-g <- ggplot(heart, aes(x = MaxHR, y = Age)) + 
-  geom_point(aes(color=HasHeartDisease)) +
+g <- ggplot(heart, aes(x = MaxHR, y = Age, color=HasHeartDisease)) + 
+  geom_point(aes(alpha = 0.8)) +
   geom_smooth(method = "lm", se=FALSE) + 
   labs() + 
-  theme_minimal()
+  theme_gray()
 g
 ```
 
@@ -95,5 +95,16 @@ test <- testing(heart_split)
 ```
 
 ## Task 5: OLS and LASSO
+
+```{r}
+# Fit model
+ols_mlr <- lm(Age ~ HasHeartDisease + MaxHR + HasHeartDisease:MaxHR, data = train)
+summary(ols_mlr)
+```
+
+```{r}
+
+pred <- predict(ols_mlr, test, newdata = test)
+```
 
 ## Task 6: Linear Regression
