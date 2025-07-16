@@ -21,11 +21,11 @@ editor: visual
 
     A general linear model is a generic framework for predicting the response of a dependent variable on one or more independent variables (regressors).
 
--    When fitting a multiple linear regression model, what does adding an interaction term
-    do? That is, what does it allow the model to do differently as compared to when it is
-    not included in the model?
+-   When fitting a multiple linear regression model, what does adding an interaction term do? That is, what does it allow the model to do differently as compared to when it is not included in the model?
 
-    Adding an interaction term accounts for the situation where the value of one regressor can depend on the value of another regressor. This is represented in the formula as a product of these terms.
+```         
+Adding an interaction term accounts for the situation where the value of one regressor can depend on the value of another regressor. This is represented in the formula as a product of these terms.
+```
 
 -   Why do we split our data into a training and test set?
 
@@ -41,6 +41,7 @@ library(tidyverse)
 library(tidymodels)
 library(caret)
 library(yardstick)
+library(ggplot2)
 ```
 
 ```{r}
@@ -97,7 +98,9 @@ test <- testing(heart_split)
 
 ## Task 5: OLS and LASSO
 
-#### Fit Interaction Model
+#### Q1: Fit Interaction Model
+
+ols_mlr_rec \<- recipe(Age \~ HasHeartDisease + MaxHR, data = train) \|\> step_normalize(all_numeric(), -all_outcomes()) \|\> step_interact(terms = \~ HasHeartDisease)
 
 ```{r}
 # Fit model
@@ -105,12 +108,13 @@ ols_mlr <- lm(Age ~ HasHeartDisease + MaxHR + HasHeartDisease:MaxHR, data = trai
 #summary(ols_mlr)
 
 # Recipe
-# TODO: Fix this
-ols_mlr_rec <- recipe(Age ~ HasHeartDisease + MaxHR, data = train) |> step_normalize(all_numeric(), -all_outcomes()) |> step_interact(terms = ~ HasHeartDisease)
+ols_mlr_rec <- recipe(Age ~ HasHeartDisease + MaxHR, data = train) |> 
+  step_dummy(all_nominal_predictors()) |> 
+  step_interact(terms = ~ starts_with("HasHeart"):starts_with("MaxHR")) |>
+  step_normalize(all_numeric_predictors()) 
 ```
 
-```{:MaxHR)}
-
+```{r}
 # Model
 ols_mlr <- linear_reg() |> set_engine("lm")
 
@@ -121,31 +125,38 @@ ols_mlr_fit <- ols_mlr_wfl |> fit(train)
 ols_mlr_fit |> tidy()
 ```
 
-#### Find RMSE
+#### Q2: Find RMSE
 
 ```{r}
 # Collect metrics/performance on the test set
-ols_mlr_wfl |> last_fit(heart_split) |> collect_metrics()
+ols_mlr_test_rmse <- ols_mlr_wfl |> last_fit(heart_split) |> collect_metrics() |> filter(.metric == "rmse")
+ols_mlr_test_rmse
 
 ```
 
-#### LASSO
+#### Q3: LASSO
 
 ```{r}
+# NOTE: The recipe/preprocessing steps are identical in this step to the ols model
 LASSO_recipe <- recipe(Age ~ HasHeartDisease + MaxHR, data = train) |> 
   step_dummy(all_nominal_predictors()) |> 
-  step_interact(terms = ~ HasHeartDisease:MaxHR) |>
+  step_interact(terms = ~ starts_with("HasHeart"):MaxHR) |>
   step_normalize(all_numeric_predictors()) 
   
 LASSO_recipe
 ```
+
+#### Q4: LASSO Model Selection
 
 ```{r}
 # recall mixture = 1 sets to LASSO
 LASSO_spec <- linear_reg(penalty = tune(), mixture = 1) |> 
   set_engine("glmnet")
 
+# Create workflow
 LASSO_wkf <- workflow() |> add_recipe(LASSO_recipe) |> add_model(LASSO_spec)
+
+# Cross-validation folds
 
 heart_cv_folds <- vfold_cv(train, 5)
 
@@ -154,6 +165,42 @@ LASSO_grid <- LASSO_wkf |>
   tune_grid(resamples = heart_cv_folds,
             grid = grid_regular(penalty(),
                                levels = 20))
+# Display grid
+LASSO_grid
 ```
+
+```{r}
+LASSO_grid |> collect_metrics() |> 
+  filter(.metric == "rmse") |>
+  ggplot(aes(penalty, mean, color = .metric)) + geom_line()
+```
+
+```{r}
+# Select best model based on RMSE
+lowest_rmse <- LASSO_grid |> select_best(metric = "rmse")
+
+LASSO_final <- LASSO_wkf |> finalize_workflow(lowest_rmse) |>
+  fit(train)
+tidy(LASSO_final)
+
+```
+
+#### Q5: Model Expectations
+
+Without looking at the RMSE calculations, I would expect the RMSE calculations to be roughly the same. This is because we already pre-selected only HasHeartDisease and MaxHR as predictors. The LASSO method would likely have a more dramatic effect on models with larger amount of initial predictors. I also imagine both models might reach a prediction plateau based on only these features.
+
+#### Q6: Compare OLS and LASSO
+
+```{r}
+# Get rmse from our LASSO model
+LASSO_test_rmse <- LASSO_wkf |> finalize_workflow(lowest_rmse) |> last_fit(heart_split) |> collect_metrics() |> filter(.metric == "rmse")
+
+# Combine our metrics
+rbind(ols_mlr_test_rmse, LASSO_test_rmse) |> mutate(Model = c("OLS", "LASSO")) |> select(Model, everything())
+```
+
+#### Q7: Explain RMSE Similarity
+
+At the end of the day, the coefficients are still fairly similar and the LASSO method did not enact a large amount of shrinkage. The number of predictors was largely unchanged (none shrunk to exactly zero) and the models likely arrive at similar predictions.
 
 ## Task 6: Linear Regression
