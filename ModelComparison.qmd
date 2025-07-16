@@ -60,7 +60,8 @@ This does not make sense - as this variable should be treated as a factor, since
 # Change heart disease to the correct type
 # Perform some dataset cleanup
 
-heart <- heart |> mutate(HasHeartDisease = as_factor(HeartDisease)) |> 
+heart <- heart |> 
+  mutate(HasHeartDisease = as_factor(HeartDisease)) |> 
   select(!c(ST_Slope, HeartDisease))
 
 head(heart)
@@ -96,15 +97,63 @@ test <- testing(heart_split)
 
 ## Task 5: OLS and LASSO
 
+#### Fit Interaction Model
+
 ```{r}
 # Fit model
 ols_mlr <- lm(Age ~ HasHeartDisease + MaxHR + HasHeartDisease:MaxHR, data = train)
-summary(ols_mlr)
+#summary(ols_mlr)
+
+# Recipe
+# TODO: Fix this
+ols_mlr_rec <- recipe(Age ~ HasHeartDisease + MaxHR, data = train) |> step_normalize(all_numeric(), -all_outcomes()) |> step_interact(terms = ~ HasHeartDisease)
+```
+
+```{:MaxHR)}
+
+# Model
+ols_mlr <- linear_reg() |> set_engine("lm")
+
+# Workflow
+ols_mlr_wfl <- workflow() |> add_recipe(ols_mlr_rec) |> add_model(ols_mlr)
+ols_mlr_fit <- ols_mlr_wfl |> fit(train)
+
+ols_mlr_fit |> tidy()
+```
+
+#### Find RMSE
+
+```{r}
+# Collect metrics/performance on the test set
+ols_mlr_wfl |> last_fit(heart_split) |> collect_metrics()
+
+```
+
+#### LASSO
+
+```{r}
+LASSO_recipe <- recipe(Age ~ HasHeartDisease + MaxHR, data = train) |> 
+  step_dummy(all_nominal_predictors()) |> 
+  step_interact(terms = ~ HasHeartDisease:MaxHR) |>
+  step_normalize(all_numeric_predictors()) 
+  
+LASSO_recipe
 ```
 
 ```{r}
+# recall mixture = 1 sets to LASSO
+LASSO_spec <- linear_reg(penalty = tune(), mixture = 1) |> 
+  set_engine("glmnet")
 
-pred <- predict(ols_mlr, test, newdata = test)
+LASSO_wkf <- workflow() |> add_recipe(LASSO_recipe) |> add_model(LASSO_spec)
+
+heart_cv_folds <- vfold_cv(train, 5)
+
+# Create grid object
+LASSO_grid <- LASSO_wkf |>
+  tune_grid(resamples = heart_cv_folds,
+            grid = grid_regular(penalty(),
+                               levels = 20))
 ```
 
 ## Task 6: Linear Regression
