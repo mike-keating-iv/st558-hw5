@@ -19,13 +19,13 @@ editor: visual
 
 -   What is meant by a general linear model?
 
-    A general linear model is a generic framework for predicting the response of a dependent variable on one or more independent variables (regressors).
+    A general linear model is a generic framework for predicting the response of a dependent variable on one or more independent variables (regressors, predictors). The response is a general linear combination of the predictors.
 
 -   When fitting a multiple linear regression model, what does adding an interaction term do? That is, what does it allow the model to do differently as compared to when it is not included in the model?
 
-```         
-Adding an interaction term accounts for the situation where the value of one regressor can depend on the value of another regressor. This is represented in the formula as a product of these terms.
-```
+    Adding an interaction term accounts for the situation where the value of one regressor can depend on the value of another regressor. This is represented in the formula as a product of these terms. This helps us model effects that are non-additive (say, they effect one type of person more than another, etc)
+
+<!-- -->
 
 -   Why do we split our data into a training and test set?
 
@@ -35,7 +35,7 @@ Adding an interaction term accounts for the situation where the value of one reg
 
 #### Packages and Data
 
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
 # Load Dependencies
 library(tidyverse)
 library(tidymodels)
@@ -43,6 +43,8 @@ library(caret)
 library(yardstick)
 library(ggplot2)
 ```
+
+#### Q1: Summary
 
 ```{r}
 heart <- read_csv("data/heart.csv", show_col_types = FALSE)
@@ -57,6 +59,8 @@ Heart disease is a quantitative variable (double)
 
 This does not make sense - as this variable should be treated as a factor, since it is a binary classification.
 
+#### Q2: Alter HeartDisease Variable
+
 ```{r}
 # Change heart disease to the correct type
 # Perform some dataset cleanup
@@ -70,9 +74,10 @@ head(heart)
 
 ## Task 3: EDA
 
+#### Q1: Plot
+
 ```{r}
 library(ggplot2)
- # NOTE: Check to see if I am understanding the prompt correctly...
 g <- ggplot(heart, aes(x = MaxHR, y = Age, color=HasHeartDisease)) + 
   geom_point(aes(alpha = 0.8)) +
   geom_smooth(method = "lm", se=FALSE) + 
@@ -80,6 +85,10 @@ g <- ggplot(heart, aes(x = MaxHR, y = Age, color=HasHeartDisease)) +
   theme_gray()
 g
 ```
+
+#### Q2: Additive vs Interaction
+
+Since the above plot shows differing slopes for each factor of HasHeartDisease, an interaction model will be more suitable. However, it doesn't seem like the interaction is incredibly strong.
 
 ## Task 4: Testing and Training
 
@@ -129,7 +138,10 @@ ols_mlr_fit |> tidy()
 
 ```{r}
 # Collect metrics/performance on the test set
-ols_mlr_test_rmse <- ols_mlr_wfl |> last_fit(heart_split) |> collect_metrics() |> filter(.metric == "rmse")
+ols_mlr_test_rmse <- ols_mlr_wfl |> 
+  last_fit(heart_split) |> 
+  collect_metrics() |> 
+  filter(.metric == "rmse")
 ols_mlr_test_rmse
 
 ```
@@ -193,10 +205,16 @@ Without looking at the RMSE calculations, I would expect the RMSE calculations t
 
 ```{r}
 # Get rmse from our LASSO model
-LASSO_test_rmse <- LASSO_wkf |> finalize_workflow(lowest_rmse) |> last_fit(heart_split) |> collect_metrics() |> filter(.metric == "rmse")
+LASSO_test_rmse <- LASSO_wkf |> 
+  finalize_workflow(lowest_rmse) |> 
+  last_fit(heart_split) |> 
+  collect_metrics() |> 
+  filter(.metric == "rmse")
 
 # Combine our metrics
-rbind(ols_mlr_test_rmse, LASSO_test_rmse) |> mutate(Model = c("OLS", "LASSO")) |> select(Model, everything())
+rbind(ols_mlr_test_rmse, LASSO_test_rmse) |> 
+  mutate(Model = c("OLS", "LASSO")) |> 
+  select(Model, everything())
 ```
 
 #### Q7: Explain RMSE Similarity
