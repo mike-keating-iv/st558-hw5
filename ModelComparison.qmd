@@ -203,4 +203,59 @@ rbind(ols_mlr_test_rmse, LASSO_test_rmse) |> mutate(Model = c("OLS", "LASSO")) |
 
 At the end of the day, the coefficients are still fairly similar and the LASSO method did not enact a large amount of shrinkage. The number of predictors was largely unchanged (none shrunk to exactly zero) and the models likely arrive at similar predictions.
 
-## Task 6: Linear Regression
+## Task 6: Logistic Regression
+
+```{r}
+
+# First Model
+# All predictors
+
+# Use the same split as before
+LR1_recipe <- recipe(HasHeartDisease ~ . , data = train) |>
+  step_normalize(all_numeric_predictors())
+
+# Second Model
+# 
+LR2_recipe <- recipe(HasHeartDisease ~ Age + Sex + Cholesterol, data = train) |>
+  step_normalize(all_numeric_predictors())
+
+# Spec shared between both models
+LR_spec <- logistic_reg() |> 
+  set_engine("glm")
+
+# Create workflows
+LR1_wkf <- workflow() |> 
+  add_recipe(LR1_recipe) |> 
+  add_model(LR_spec)
+
+LR2_wkf <- workflow() |> 
+  add_recipe(LR2_recipe) |> 
+  add_model(LR_spec)
+
+LR_cv_folds = vfold_cv(train, 5, 3) # 3 repeats
+
+# Fit models
+LR1_fit <- LR1_wkf |> 
+  fit_resamples(LR_cv_folds, metrics = metric_set(accuracy, mn_log_loss))
+
+LR2_fit <- LR2_wkf |> 
+  fit_resamples(LR_cv_folds, metrics = metric_set(accuracy, mn_log_loss))
+
+# Metrics
+rbind(LR1_fit |> collect_metrics(),
+      LR2_fit |> collect_metrics()) |> mutate(Model = c("Model 1", "Model 1", "Model 2", "Model 2")) |> select(Model, everything())
+```
+
+Model 1 (all predictors) performs better on both accuracy (0.811) and log loss (0419, lower is better).
+
+```{r}
+# Fit model 1
+LR_final_fit <- LR1_wkf |> fit(data = train)
+LR_preds <- predict(LR_final_fit, test) |> pull(.pred_class)
+
+confusionMatrix(data = LR_preds, reference = test$HasHeartDisease)
+```
+
+Sensitivity is also known as recall and represents the true positive rate. This is how well we identify true positives (i.e. 1, or the patient has heart disease)
+
+Specificity represents the true negative rate, or how well our model identifies true negatives.
